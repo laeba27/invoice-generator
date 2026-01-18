@@ -220,7 +220,7 @@ This project is created for educational and portfolio purposes.
 
 ## 👨‍💻 Author
 
-Built with ❤️ using Spring Boot and Next.js
+Built with Laeba❤️ using Spring Boot and Next.js
 
 ---
 
