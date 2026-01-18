@@ -17,46 +17,46 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Invoice {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "invoice_number", nullable = false, unique = true)
     private String invoiceNumber;
-    
+
     @Column(name = "business_id", nullable = false)
     private Long businessId;
-    
+
     @Column(name = "customer_id")
     private Long customerId;
-    
+
     @Column(name = "invoice_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private InvoiceType invoiceType;
-    
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
-    
+
     @Column(precision = 10, scale = 2)
     private BigDecimal cgst = BigDecimal.ZERO;
-    
+
     @Column(precision = 10, scale = 2)
     private BigDecimal sgst = BigDecimal.ZERO;
-    
+
     @Column(precision = 10, scale = 2)
     private BigDecimal igst = BigDecimal.ZERO;
-    
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
-    
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InvoiceItem> items = new ArrayList<>();
-    
+
     public enum InvoiceType {
         INTRA, INTER
     }

@@ -8,6 +8,8 @@ import java.util.List;
 
 @Repository
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
+
     List<Invoice> findByBusinessIdOrderByCreatedAtDesc(Long businessId);
+
     boolean existsByInvoiceNumber(String invoiceNumber);
 }

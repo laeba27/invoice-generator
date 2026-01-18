@@ -12,23 +12,23 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/invoices")
 public class InvoiceController {
-    
+
     private final InvoiceService invoiceService;
-    
+
     public InvoiceController(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;
     }
-    
+
     @PostMapping
     public ResponseEntity<InvoiceResponse> createInvoice(@Valid @RequestBody InvoiceRequest request) {
         return ResponseEntity.ok(invoiceService.createInvoice(request));
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<InvoiceResponse> getInvoiceById(@PathVariable Long id) {
         return ResponseEntity.ok(invoiceService.getInvoiceById(id));
     }
-    
+
     @GetMapping
     public ResponseEntity<List<InvoiceResponse>> getAllInvoices() {
         return ResponseEntity.ok(invoiceService.getAllInvoices());

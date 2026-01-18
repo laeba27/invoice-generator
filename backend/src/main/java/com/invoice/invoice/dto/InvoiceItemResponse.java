@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 public class InvoiceItemResponse {
+
     private Long id;
     private String itemName;
     private Integer quantity;

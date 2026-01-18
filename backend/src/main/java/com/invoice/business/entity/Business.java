@@ -14,29 +14,29 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Business {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "user_id", nullable = false)
     private Long userId;
-    
+
     @Column(name = "business_name", nullable = false)
     private String businessName;
-    
+
     @Column(nullable = false)
     private String address;
-    
+
     @Column(name = "state_code", nullable = false, length = 2)
     private String stateCode;
-    
+
     @Column(nullable = false)
     private String phone;
-    
+
     @Column(name = "gst_number")
     private String gstNumber;
-    
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

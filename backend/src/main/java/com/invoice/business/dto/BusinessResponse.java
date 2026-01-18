@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class BusinessResponse {
+
     private Long id;
     private Long userId;
     private String businessName;

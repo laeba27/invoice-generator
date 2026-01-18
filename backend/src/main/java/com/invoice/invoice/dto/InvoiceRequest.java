@@ -10,8 +10,9 @@ import java.util.List;
 
 @Data
 public class InvoiceRequest {
+
     private Long customerId; // Optional - can be null for anonymous invoices
-    
+
     @NotEmpty(message = "Invoice must have at least one item")
     @Valid
     private List<InvoiceItemRequest> items;

@@ -11,18 +11,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Customer {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "business_id", nullable = false)
     private Long businessId;
-    
+
     private String name;
-    
+
     private String phone;
-    
+
     @Column(name = "state_code", length = 2)
     private String stateCode;
 }

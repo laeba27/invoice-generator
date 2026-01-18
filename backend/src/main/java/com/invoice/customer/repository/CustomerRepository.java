@@ -8,6 +8,8 @@ import java.util.List;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
+
     List<Customer> findByBusinessId(Long businessId);
+
     List<Customer> findByBusinessIdAndNameContainingIgnoreCase(Long businessId, String name);
 }
