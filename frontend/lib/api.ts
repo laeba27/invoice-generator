@@ -142,4 +142,116 @@ export const apiClient = {
 
     return response.json();
   },
+
+  // Payment APIs (Phase 2)
+  async addPayment(data: any) {
+    const response = await fetch(`${API_BASE_URL}/payments`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to add payment');
+    }
+
+    return response.json();
+  },
+
+  async getPaymentsByInvoice(invoiceId: number) {
+    const response = await fetch(`${API_BASE_URL}/payments/invoice/${invoiceId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch payments');
+    }
+
+    return response.json();
+  },
+
+  async deletePayment(paymentId: number) {
+    const response = await fetch(`${API_BASE_URL}/payments/${paymentId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete payment');
+    }
+  },
+
+  // Template APIs (Phase 2)
+  async createTemplate(data: any) {
+    const response = await fetch(`${API_BASE_URL}/templates`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create template');
+    }
+
+    return response.json();
+  },
+
+  async getTemplatesByBusiness(businessId: number) {
+    const response = await fetch(`${API_BASE_URL}/templates/business/${businessId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch templates');
+    }
+
+    return response.json();
+  },
+
+  async getDefaultTemplate(businessId: number) {
+    const response = await fetch(`${API_BASE_URL}/templates/business/${businessId}/default`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch default template');
+    }
+
+    return response.json();
+  },
+
+  async updateTemplate(templateId: number, data: any) {
+    const response = await fetch(`${API_BASE_URL}/templates/${templateId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update template');
+    }
+
+    return response.json();
+  },
+
+  async deleteTemplate(templateId: number) {
+    const response = await fetch(`${API_BASE_URL}/templates/${templateId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete template');
+    }
+  },
 };

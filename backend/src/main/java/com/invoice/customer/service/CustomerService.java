@@ -35,20 +35,42 @@ public class CustomerService {
         customer.setBusinessId(businessId);
         customer.setName(request.getName());
         customer.setPhone(request.getPhone());
+        customer.setEmail(request.getEmail());
+        customer.setAddress(request.getAddress());
+        customer.setCity(request.getCity());
         customer.setStateCode(request.getStateCode());
+        customer.setGstin(request.getGstin());
 
         Customer savedCustomer = customerRepository.save(customer);
 
-        return new CustomerResponse(savedCustomer.getId(), savedCustomer.getBusinessId(),
-                savedCustomer.getName(), savedCustomer.getPhone(), savedCustomer.getStateCode());
+        return new CustomerResponse(
+                savedCustomer.getId(),
+                savedCustomer.getBusinessId(),
+                savedCustomer.getName(),
+                savedCustomer.getPhone(),
+                savedCustomer.getEmail(),
+                savedCustomer.getAddress(),
+                savedCustomer.getCity(),
+                savedCustomer.getStateCode(),
+                savedCustomer.getGstin()
+        );
     }
 
     public List<CustomerResponse> getAllCustomers() {
         Long businessId = getBusinessIdForCurrentUser();
 
         return customerRepository.findByBusinessId(businessId).stream()
-                .map(c -> new CustomerResponse(c.getId(), c.getBusinessId(), c.getName(),
-                c.getPhone(), c.getStateCode()))
+                .map(c -> new CustomerResponse(
+                c.getId(),
+                c.getBusinessId(),
+                c.getName(),
+                c.getPhone(),
+                c.getEmail(),
+                c.getAddress(),
+                c.getCity(),
+                c.getStateCode(),
+                c.getGstin()
+        ))
                 .collect(Collectors.toList());
     }
 
@@ -56,8 +78,17 @@ public class CustomerService {
         Long businessId = getBusinessIdForCurrentUser();
 
         return customerRepository.findByBusinessIdAndNameContainingIgnoreCase(businessId, query).stream()
-                .map(c -> new CustomerResponse(c.getId(), c.getBusinessId(), c.getName(),
-                c.getPhone(), c.getStateCode()))
+                .map(c -> new CustomerResponse(
+                c.getId(),
+                c.getBusinessId(),
+                c.getName(),
+                c.getPhone(),
+                c.getEmail(),
+                c.getAddress(),
+                c.getCity(),
+                c.getStateCode(),
+                c.getGstin()
+        ))
                 .collect(Collectors.toList());
     }
 
@@ -71,8 +102,17 @@ public class CustomerService {
             throw new RuntimeException("Unauthorized access to customer");
         }
 
-        return new CustomerResponse(customer.getId(), customer.getBusinessId(),
-                customer.getName(), customer.getPhone(), customer.getStateCode());
+        return new CustomerResponse(
+                customer.getId(),
+                customer.getBusinessId(),
+                customer.getName(),
+                customer.getPhone(),
+                customer.getEmail(),
+                customer.getAddress(),
+                customer.getCity(),
+                customer.getStateCode(),
+                customer.getGstin()
+        );
     }
 
     private Long getBusinessIdForCurrentUser() {

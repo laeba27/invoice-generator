@@ -23,6 +23,14 @@ public class Customer {
 
     private String phone;
 
+    private String email;
+
+    private String address;
+
+    private String city;
+
     @Column(name = "state_code", length = 2)
     private String stateCode;
+
+    private String gstin;
 }

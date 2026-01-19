@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,12 +32,26 @@ public class Invoice {
     @Column(name = "customer_id")
     private Long customerId;
 
+    // Phase 2 enhancements
+    @Column(name = "invoice_title")
+    private String invoiceTitle;
+
+    @Column(name = "invoice_date", nullable = false)
+    private LocalDate invoiceDate;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
     @Column(name = "invoice_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private InvoiceType invoiceType;
 
+    // Financial fields
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
+
+    @Column(name = "total_discount", precision = 10, scale = 2)
+    private BigDecimal totalDiscount = BigDecimal.ZERO;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal cgst = BigDecimal.ZERO;
@@ -47,8 +62,29 @@ public class Invoice {
     @Column(precision = 10, scale = 2)
     private BigDecimal igst = BigDecimal.ZERO;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal total;
+    @Column(name = "tax_total", precision = 10, scale = 2)
+    private BigDecimal taxTotal = BigDecimal.ZERO;
+
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(name = "paid_amount", precision = 10, scale = 2)
+    private BigDecimal paidAmount = BigDecimal.ZERO;
+
+    @Column(name = "due_amount", precision = 10, scale = 2)
+    private BigDecimal dueAmount = BigDecimal.ZERO;
+
+    // Status tracking
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private InvoiceStatus status = InvoiceStatus.DUE;
+
+    // Template and customization
+    @Column(name = "template_id")
+    private Long templateId;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -57,7 +93,27 @@ public class Invoice {
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InvoiceItem> items = new ArrayList<>();
 
+    // Backward compatibility - keeping old 'total' field
+    @Column(precision = 10, scale = 2)
+    private BigDecimal total;
+
     public enum InvoiceType {
         INTRA, INTER
+    }
+
+    public enum InvoiceStatus {
+        DUE, PARTIAL, PAID
+    }
+
+    // Helper method to update status based on payments
+    public void updateStatus() {
+        if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+            this.status = InvoiceStatus.DUE;
+        } else if (paidAmount.compareTo(totalAmount) < 0) {
+            this.status = InvoiceStatus.PARTIAL;
+        } else {
+            this.status = InvoiceStatus.PAID;
+        }
+        this.dueAmount = totalAmount.subtract(paidAmount);
     }
 }
