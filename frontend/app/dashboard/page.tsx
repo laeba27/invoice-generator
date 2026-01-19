@@ -26,14 +26,14 @@ export default function DashboardPage() {
     try {
       const businessData = await apiClient.getBusiness();
       if (!businessData) {
-        router.push('/profile');
+        router.push('/login');
         return;
       }
       setBusiness(businessData);
 
       // Try to load invoices
       try {
-        const invoiceData = await apiClient.getInvoices();
+        const invoiceData = await apiClient.getAllInvoices();
         setInvoices(invoiceData || []);
       } catch (err) {
         console.log('No invoices yet');
@@ -41,7 +41,7 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Error loading business:', err);
-      router.push('/profile');
+      router.push('/login');
     } finally {
       setLoading(false);
     }

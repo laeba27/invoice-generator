@@ -143,6 +143,30 @@ export const apiClient = {
     return response.json();
   },
 
+  async deleteInvoice(id: number) {
+    const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete invoice');
+    }
+  },
+
+  async getCustomerById(id: number) {
+    const response = await fetch(`${API_BASE_URL}/customers/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch customer');
+    }
+
+    return response.json();
+  },
+
   // Payment APIs (Phase 2)
   async addPayment(data: any) {
     const response = await fetch(`${API_BASE_URL}/payments`, {

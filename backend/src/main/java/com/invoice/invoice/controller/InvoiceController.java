@@ -33,4 +33,10 @@ public class InvoiceController {
     public ResponseEntity<List<InvoiceResponse>> getAllInvoices() {
         return ResponseEntity.ok(invoiceService.getAllInvoices());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInvoice(@PathVariable Long id) {
+        invoiceService.deleteInvoice(id);
+        return ResponseEntity.ok().build();
+    }
 }

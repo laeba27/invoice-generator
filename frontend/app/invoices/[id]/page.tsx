@@ -209,7 +209,7 @@ export default function InvoiceDetailPage() {
                     <img src={business.logo} alt="Company Logo" className="h-16 mb-3" />
                   )}
                   <div className="text-gray-800">
-                    <p className="font-bold text-xl">{business.name}</p>
+                    <p className="font-bold text-xl">{business.businessname}</p>
                     {business.phone && <p className="text-sm">Phone: {business.phone}</p>}
                     {business.email && <p className="text-sm">Email: {business.email}</p>}
                     {business.address && <p className="text-sm mt-1">{business.address}</p>}

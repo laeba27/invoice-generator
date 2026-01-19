@@ -166,6 +166,19 @@ public class InvoiceService {
                 .collect(Collectors.toList());
     }
 
+    public void deleteInvoice(Long invoiceId) {
+        Business business = getBusinessForCurrentUser();
+
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+        if (!invoice.getBusinessId().equals(business.getId())) {
+            throw new RuntimeException("Unauthorized access to invoice");
+        }
+
+        invoiceRepository.delete(invoice);
+    }
+
     private Business getBusinessForCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)

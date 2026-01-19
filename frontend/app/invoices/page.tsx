@@ -11,6 +11,7 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -45,6 +46,24 @@ export default function InvoicesPage() {
       style: 'currency',
       currency: 'INR',
     }).format(amount);
+  };
+
+  const handleDeleteInvoice = async (invoiceId: number) => {
+    if (!confirm('Are you sure you want to delete this invoice?')) {
+      return;
+    }
+
+    try {
+      await apiClient.deleteInvoice(invoiceId);
+      setInvoices(invoices.filter(inv => inv.id !== invoiceId));
+      setOpenMenuId(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete invoice');
+    }
+  };
+
+  const toggleMenu = (invoiceId: number) => {
+    setOpenMenuId(openMenuId === invoiceId ? null : invoiceId);
   };
 
   if (loading) {
@@ -106,7 +125,7 @@ export default function InvoicesPage() {
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-lg shadow overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -134,7 +153,7 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {invoices.map((invoice) => (
+                {invoices.map((invoice, index) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {invoice.invoiceNumber}
@@ -173,12 +192,49 @@ export default function InvoicesPage() {
                       {formatCurrency(invoice.totalAmount || invoice.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Link
-                        href={`/invoices/${invoice.id}`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View Details
-                      </Link>
+                      <div className="relative">
+                        <button
+                          onClick={() => toggleMenu(invoice.id)}
+                          className="text-gray-600 hover:text-gray-900 p-1"
+                        >
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                          </svg>
+                        </button>
+                        
+                        {openMenuId === invoice.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-10" 
+                              onClick={() => setOpenMenuId(null)}
+                            />
+                            <div className={`absolute ${index > invoices.length - 3 ? 'bottom-0' : 'top-0'} right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200`}>
+                              <div className="py-1">
+                                <Link
+                                  href={`/invoices/${invoice.id}`}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => setOpenMenuId(null)}
+                                >
+                                  View Details
+                                </Link>
+                                <Link
+                                  href={`/invoices/${invoice.id}/edit`}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => setOpenMenuId(null)}
+                                >
+                                  Edit Invoice
+                                </Link>
+                                <button
+                                  onClick={() => handleDeleteInvoice(invoice.id)}
+                                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                                >
+                                  Delete Invoice
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
