@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
@@ -85,6 +85,11 @@ export const apiClient = {
     return response.json();
   },
 
+  // Alias for getAllCustomers
+  async getCustomers() {
+    return this.getAllCustomers();
+  },
+
   async searchCustomers(query: string) {
     const response = await fetch(
       `${API_BASE_URL}/customers/search?query=${encodeURIComponent(query)}`,
@@ -125,6 +130,21 @@ export const apiClient = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch invoice');
+    }
+
+    return response.json();
+  },
+
+  async updateInvoice(id: number, data: any) {
+    const response = await fetch(`${API_BASE_URL}/invoices/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update invoice');
     }
 
     return response.json();
@@ -277,5 +297,35 @@ export const apiClient = {
     if (!response.ok) {
       throw new Error('Failed to delete template');
     }
+  },
+
+  // System Template APIs
+  async getSystemTemplates() {
+    const response = await fetch(`${API_BASE_URL}/templates/system`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch system templates');
+    return response.json();
+  },
+
+  async assignSystemTemplate(data: any) {
+    const response = await fetch(`${API_BASE_URL}/templates/system/assign`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to assign template');
+    return response.json();
+  },
+
+  async getSystemTemplateSettings(businessId: number) {
+    const response = await fetch(`${API_BASE_URL}/templates/system/settings/${businessId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    // If 404/Empty return null or default
+    if (!response.ok) return null;
+    return response.json();
   },
 };

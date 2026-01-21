@@ -1,7 +1,10 @@
 package com.invoice.template.controller;
 
+import com.invoice.template.dto.TemplateAssignmentRequest;
 import com.invoice.template.dto.TemplateRequest;
 import com.invoice.template.dto.TemplateResponse;
+import com.invoice.template.entity.BusinessTemplateSettings;
+import com.invoice.template.entity.PredefinedTemplate;
 import com.invoice.template.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +19,21 @@ import java.util.List;
 public class TemplateController {
 
     private final TemplateService templateService;
+
+    @GetMapping("/system")
+    public ResponseEntity<List<PredefinedTemplate>> getAllSystemTemplates() {
+        return ResponseEntity.ok(templateService.getAllSystemTemplates());
+    }
+
+    @PostMapping("/system/assign")
+    public ResponseEntity<BusinessTemplateSettings> assignSystemTemplate(@RequestBody TemplateAssignmentRequest request) {
+        return ResponseEntity.ok(templateService.assignSystemTemplate(request.getBusinessId(), request.getTemplateId(), request.getColorHex()));
+    }
+
+    @GetMapping("/system/settings/{businessId}")
+    public ResponseEntity<BusinessTemplateSettings> getSystemTemplateSettings(@PathVariable Long businessId) {
+        return ResponseEntity.ok(templateService.getSystemTemplateSettings(businessId));
+    }
 
     @PostMapping
     public ResponseEntity<TemplateResponse> createTemplate(@RequestBody TemplateRequest request) {

@@ -90,7 +90,7 @@ public class Invoice {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<InvoiceItem> items = new ArrayList<>();
 
     // Backward compatibility - keeping old 'total' field

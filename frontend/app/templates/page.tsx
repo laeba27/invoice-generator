@@ -5,6 +5,65 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth';
 import { apiClient } from '@/lib/api';
 import Navbar from '@/components/Navbar';
+import StandardTemplate from '@/components/templates/StandardTemplate';
+import ClassyTemplate from '@/components/templates/ClassyTemplate';
+import ModernTemplate from '@/components/templates/ModernTemplate';
+
+// --- Dummy Data for Preview ---
+const dummyBusiness = {
+  businessName: "Your Business Name",
+  address: "123 Business St, Tech City",
+  phone: "+91 98765 43210",
+  email: "contact@business.com",
+  gstNumber: "22AAAAA0000A1Z5",
+  stateCode: "22"
+};
+
+const dummyCustomer = {
+  name: "Sample Client",
+  address: "456 Client Ave, Market Town",
+  phone: "+91 99887 76655",
+  email: "client@example.com",
+  gstin: null
+};
+
+const dummyInvoiceInvoiceDate = new Date();
+const dummyInvoiceDueDate = new Date();
+dummyInvoiceDueDate.setDate(dummyInvoiceDueDate.getDate() + 7);
+
+const dummyInvoice = {
+  invoiceNumber: "INV-001",
+  invoiceDate: dummyInvoiceInvoiceDate.toISOString(),
+  dueDate: dummyInvoiceDueDate.toISOString(),
+  items: [
+    { 
+      itemName: "Professional Services", 
+      itemDescription: "Consulting and development hours",
+      quantity: 10, 
+      price: 1500, 
+      discount: 0, 
+      gstRate: 18, 
+      lineTotal: 17700 
+    },
+    { 
+      itemName: "Software License", 
+      itemDescription: "Annual subscription",
+      quantity: 1, 
+      price: 5000, 
+      discount: 500, 
+      gstRate: 18, 
+      lineTotal: 5310 
+    }
+  ],
+  subtotal: 20000,
+  totalDiscount: 500,
+  taxTotal: 3510,
+  total: 23010,
+  notes: "This is a sample invoice to demonstrate the template layout. The colors and structure will adapt to your choices.",
+  status: "DUE"
+};
+
+// --- Interfaces ---
 
 interface Template {
   id: number;
@@ -14,43 +73,23 @@ interface Template {
   createdAt: string;
 }
 
-interface TemplateConfig {
-  showCustomerEmail: boolean;
-  showCustomerPhone: boolean;
-  showCustomerLocation: boolean;
-  showDiscount: boolean;
-  showPaymentInfo: boolean;
-  showLogo: boolean;
-  showSignature: boolean;
-  showQrCode: boolean;
-  showNotes: boolean;
-  showDueDate: boolean;
-  showItemDescription: boolean;
+interface PredefinedTemplate {
+  id: number;
+  name: string;
+  usageCount: number;
+  previewImageUrl: string;
 }
-
-const defaultConfig: TemplateConfig = {
-  showCustomerEmail: true,
-  showCustomerPhone: true,
-  showCustomerLocation: true,
-  showDiscount: true,
-  showPaymentInfo: true,
-  showLogo: true,
-  showSignature: false,
-  showQrCode: false,
-  showNotes: true,
-  showDueDate: true,
-  showItemDescription: true,
-};
 
 export default function TemplatesPage() {
   const router = useRouter();
   const [business, setBusiness] = useState<any>(null);
-  const [templates, setTemplates] = useState<Template[]>([]);
+  
+  // System Template State
+  const [systemTemplates, setSystemTemplates] = useState<PredefinedTemplate[]>([]);
+  const [selectedSystemTemplateId, setSelectedSystemTemplateId] = useState<number | null>(null);
+  const [selectedColor, setSelectedColor] = useState('#000000');
+  const [savingSettings, setSavingSettings] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [templateName, setTemplateName] = useState('');
-  const [config, setConfig] = useState<TemplateConfig>(defaultConfig);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -68,8 +107,19 @@ export default function TemplatesPage() {
         return;
       }
       setBusiness(businessData);
-      const templatesData = await apiClient.getTemplatesByBusiness(businessData.id);
-      setTemplates(templatesData);
+
+      // Load System Templates and Settings
+      const sysTemplates = await apiClient.getSystemTemplates();
+      setSystemTemplates(sysTemplates);
+      
+      const settings = await apiClient.getSystemTemplateSettings(businessData.id);
+      if (settings && settings.template) {
+        setSelectedSystemTemplateId(settings.template.id);
+        setSelectedColor(settings.colorHex);
+      } else if (sysTemplates.length > 0) {
+        // Default to first if none selected
+        setSelectedSystemTemplateId(sysTemplates[0].id);
+      }
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -77,245 +127,180 @@ export default function TemplatesPage() {
     }
   };
 
-  const handleCreateTemplate = async () => {
-    if (!templateName.trim()) {
-      alert('Please enter a template name');
-      return;
-    }
-
+  const handleSaveSystemSettings = async () => {
+    if (!selectedSystemTemplateId) return;
+    setSavingSettings(true);
     try {
-      await apiClient.createTemplate({
+      await apiClient.assignSystemTemplate({
         businessId: business.id,
-        name: templateName,
-        configJson: JSON.stringify(config),
-        isDefault: templates.length === 0, // First template is default
+        templateId: selectedSystemTemplateId,
+        colorHex: selectedColor
       });
-      setShowCreateModal(false);
-      setTemplateName('');
-      setConfig(defaultConfig);
-      loadData();
+      alert('Template style saved successfully!');
+      loadData(); 
     } catch (err: any) {
-      alert(err.message);
+      alert('Failed to save settings: ' + err.message);
+    } finally {
+      setSavingSettings(false);
     }
   };
 
-  const handleUpdateTemplate = async () => {
-    if (!editingTemplate) return;
+  // --- Render Preview ---
+  const renderPreview = () => {
+    const selectedTemplate = systemTemplates.find(t => t.id === selectedSystemTemplateId);
+    if (!selectedTemplate) return <div className="p-8 text-center text-gray-500">Select a template to preview</div>;
 
-    try {
-      await apiClient.updateTemplate(editingTemplate.id, {
-        businessId: business.id,
-        name: templateName,
-        configJson: JSON.stringify(config),
-        isDefault: editingTemplate.isDefault,
-      });
-      setEditingTemplate(null);
-      setTemplateName('');
-      setConfig(defaultConfig);
-      loadData();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
+    const props = {
+      invoice: dummyInvoice,
+      business: { ...dummyBusiness, businessName: business?.businessName || "Your Business" }, 
+      customer: dummyCustomer,
+      payments: [],
+      colorHex: selectedColor
+    };
 
-  const handleSetDefault = async (templateId: number) => {
-    try {
-      const template = templates.find(t => t.id === templateId);
-      if (!template) return;
-      
-      await apiClient.updateTemplate(templateId, {
-        businessId: business.id,
-        name: template.name,
-        configJson: template.configJson,
-        isDefault: true,
-      });
-      loadData();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  const handleEditTemplate = (template: Template) => {
-    setEditingTemplate(template);
-    setTemplateName(template.name);
-    try {
-      setConfig(JSON.parse(template.configJson));
-    } catch {
-      setConfig(defaultConfig);
-    }
-  };
-
-  const handleDeleteTemplate = async (templateId: number) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
-    
-    try {
-      await apiClient.deleteTemplate(templateId);
-      loadData();
-    } catch (err: any) {
-      alert(err.message);
+    switch (selectedTemplate.name) {
+      case 'Classy': return <ClassyTemplate {...props} />;
+      case 'Modern': return <ModernTemplate {...props} />;
+      case 'Standard':
+      default: return <StandardTemplate {...props} />;
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pastel-blue via-pastel-lavender to-pastel-pink flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-700 font-medium">Loading templates...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-blue via-pastel-lavender to-pastel-pink">
+    <div className="min-h-screen bg-gray-50 font-sans">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Invoice Templates</h1>
-            <p className="text-lg text-gray-700 mt-2">Customize your invoice appearance</p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-          >
-            + Create Template
-          </button>
-        </div>
-
-        {templates.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 text-center shadow-xl">
-            <div className="text-6xl mb-4">📄</div>
-            <p className="text-gray-600 mb-6">No templates yet. Create your first template!</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-            >
-              Create Template
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-200"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">{template.name}</h3>
-                    {template.isDefault && (
-                      <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                        Default
-                      </span>
-                    )}
-                  </div>
+      <div className="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        
+        <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-100px)]">
+            
+            {/* Left Panel: Controls */}
+            <div className="lg:w-1/3 flex flex-col gap-6 overflow-y-auto pr-2">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Design Studio</h1>
+                    <p className="text-gray-600">Customize your invoice appearance.</p>
                 </div>
 
-                <div className="space-y-2 mb-4">
-                  {Object.entries(JSON.parse(template.configJson) as TemplateConfig).map(([key, value]) => (
-                    value && (
-                      <div key={key} className="text-sm text-gray-600 flex items-center">
-                        <span className="text-green-500 mr-2">✓</span>
-                        {key.replace(/([A-Z])/g, ' $1').replace('show', '')}
-                      </div>
-                    )
-                  ))}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span>1. Select Layout</span>
+                    </h2>
+                    <div className="grid grid-cols-1 gap-4">
+                        {systemTemplates.map((tpl) => (
+                            <button 
+                                key={tpl.id}
+                                onClick={() => setSelectedSystemTemplateId(tpl.id)}
+                                className={`group relative flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                                    selectedSystemTemplateId === tpl.id 
+                                    ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600 shadow-md' 
+                                    : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                                }`}
+                            >
+                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-white shadow-sm ${selectedSystemTemplateId === tpl.id ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-500'}`}>
+                                    {tpl.name === "Standard" ? "📄" : tpl.name === "Classy" ? "🎩" : "🚀"}
+                                </div>
+                                <div>
+                                    <span className={`block font-bold ${selectedSystemTemplateId === tpl.id ? 'text-primary-900' : 'text-gray-700'}`}>{tpl.name}</span>
+                                    <span className="text-xs text-gray-500">{tpl.usageCount} businesses use this</span>
+                                </div>
+                                {selectedSystemTemplateId === tpl.id && (
+                                    <div className="absolute top-4 right-4 text-primary-600">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEditTemplate(template)}
-                    className="flex-1 py-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors font-medium"
-                  >
-                    Edit
-                  </button>
-                  {!template.isDefault && (
-                    <>
-                      <button
-                        onClick={() => handleSetDefault(template.id)}
-                        className="flex-1 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-medium"
-                      >
-                        Set Default
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTemplate(template.id)}
-                        className="py-2 px-4 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span>2. Brand Color</span>
+                    </h2>
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <input 
+                                type="color" 
+                                value={selectedColor} 
+                                onChange={(e) => setSelectedColor(e.target.value)}
+                                className="h-14 w-24 rounded-lg cursor-pointer border-0 p-1 bg-gray-100 shadow-inner"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">Primary Theme</p>
+                            <p className="text-xs text-gray-500 font-mono">{selectedColor.toUpperCase()}</p>
+                        </div>
+                    </div>
+                    
+                    {/* Preset Colors */}
+                    <div className="mt-4 flex gap-2 flex-wrap">
+                        {['#000000', '#2563EB', '#DC2626', '#16A34A', '#D97706', '#9333EA'].map(c => (
+                            <button 
+                                key={c}
+                                onClick={() => setSelectedColor(c)}
+                                className="w-8 h-8 rounded-full border border-gray-200 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+                                style={{ backgroundColor: c }}
+                                aria-label={`Select color ${c}`}
+                            />
+                        ))}
+                    </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
 
-        {/* Create/Edit Template Modal */}
-        {(showCreateModal || editingTemplate) && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                {editingTemplate ? 'Edit Template' : 'Create New Template'}
-              </h2>
-
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Template Name
-                </label>
-                <input
-                  type="text"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="e.g., Standard Invoice"
-                />
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Template Configuration</h3>
-                <div className="space-y-3">
-                  {Object.entries(config).map(([key, value]) => (
-                    <label key={key} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={value}
-                        onChange={(e) => setConfig({ ...config, [key]: e.target.checked })}
-                        className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                      <span className="text-gray-700 font-medium">
-                        {key.replace(/([A-Z])/g, ' $1').replace('show', 'Show')}
-                      </span>
-                    </label>
-                  ))}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex-1">
+                     <h2 className="font-semibold text-gray-800 mb-4">Actions</h2>
+                     <button
+                        onClick={handleSaveSystemSettings}
+                        disabled={savingSettings}
+                        className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-black transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {savingSettings ? (
+                            <>
+                                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <span>Save & Apply Style</span>
+                                <span className="bg-white/20 px-2 py-0.5 rounded text-xs">Default</span>
+                            </>
+                        )}
+                    </button>
+                    <p className="text-xs text-gray-500 text-center mt-3">
+                        This will update the default look for all your future invoices.
+                    </p>
                 </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setEditingTemplate(null);
-                    setTemplateName('');
-                    setConfig(defaultConfig);
-                  }}
-                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={editingTemplate ? handleUpdateTemplate : handleCreateTemplate}
-                  className="flex-1 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
-                >
-                  {editingTemplate ? 'Update Template' : 'Create Template'}
-                </button>
-              </div>
             </div>
-          </div>
-        )}
+
+            {/* Right Panel: Live Preview */}
+            <div className="lg:w-2/3 bg-gray-200/50 rounded-3xl overflow-hidden border border-gray-200 flex flex-col shadow-inner">
+                <div className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+                    <span className="font-semibold text-gray-500 uppercase tracking-widest text-xs flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        Live Preview
+                    </span>
+                    <div className="flex gap-2">
+                        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                    </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-8 flex items-start justify-center">
+                    <div className="w-full max-w-[210mm] bg-white shadow-2xl transition-all duration-300 origin-top transform scale-95 lg:scale-100">
+                        {renderPreview()}
+                    </div>
+                </div>
+            </div>
+
+        </div>
       </div>
     </div>
   );
